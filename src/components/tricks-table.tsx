@@ -36,6 +36,13 @@ const orderSchema = z.object({
   status: z.enum(["PLANNED", "APPROVED", "REJECTED", "SUBMITTED", "COMPLETED"]).default("PLANNED"),
 });
 
+const BATCH_SIZE = 100;
+
+
+
+// Call this function instead of sending all at once
+
+
 
 
 
@@ -123,14 +130,27 @@ export function TricksTable() {
 
             setData((prev) => [...prev, ...validatedData as TInsertPurchaseOrderSchema[]])
 
-            createTransactions.mutate(validatedData as TInsertPurchaseOrderSchema[], {
-              onSuccess: () => {
-                console.log("Transactions successfully created!")
-              },
-              onError: (error) => {
-                console.error("Error creating transactions:", error)
-              },
-            })
+            const sendBatches = async (data: TInsertPurchaseOrderSchema[]) => {
+              for (let i = 0; i < data.length; i += BATCH_SIZE) {
+                const batch = data.slice(i, i + BATCH_SIZE);
+                try {
+                  await createTransactions.mutateAsync(batch);
+                } catch (error) {
+                  console.error("Error sending batch:", error);
+                }
+              }
+            };
+
+            sendBatches(validatedData);
+
+            // createTransactions.mutate(validatedData as TInsertPurchaseOrderSchema[], {
+            //   onSuccess: () => {
+            //     console.log("Transactions successfully created!")
+            //   },
+            //   onError: (error) => {
+            //     console.error("Error creating transactions:", error)
+            //   },
+            // })
           }
 
 
